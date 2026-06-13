@@ -1,4 +1,4 @@
-const CACHE_NAME = "busan-premium-taxi-v2-clean";
+const CACHE_NAME = "busan-premium-taxi-v4-optional-extra";
 const APP_SHELL = [
   "./",
   "./index.html",

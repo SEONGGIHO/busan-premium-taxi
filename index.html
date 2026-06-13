@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Busan Taxi Fare PWA v2-clean: explanatory notes removed -->
+  <!-- Busan Taxi Fare PWA v4-optional-extra: optional fixed extra charge -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Busan Premium Taxi Fare Estimator</title>
@@ -347,6 +347,25 @@
       display: inline-flex;
     }
 
+  
+    .quiet-option {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 7px;
+      color: rgba(156, 167, 188, 0.72);
+      font-size: 11px;
+      user-select: none;
+    }
+
+    .quiet-option input {
+      width: 13px;
+      height: 13px;
+      accent-color: var(--gold);
+      opacity: 0.65;
+    }
+
   </style>
 </head>
 <body>
@@ -391,6 +410,11 @@
             </div>
           </div>
         </div>
+
+        <label class="quiet-option">
+          <input id="extraCharge" type="checkbox" />
+          <span>option</span>
+        </label>
 
         <button class="btn" onclick="calculateFare()">Estimate Fare</button>
         <div class="install-row">
@@ -486,7 +510,8 @@
 
       const distanceFare = calculateBaseFare(distance);
       const timeAdj = calculateTimeAdjustment(distance, minutes);
-      const total = roundUpToUnit(distanceFare + timeAdj + toll, 100);
+      const fixedExtraCharge = document.getElementById("extraCharge").checked ? 10000 : 0;
+      const total = roundUpToUnit(distanceFare + timeAdj + toll + fixedExtraCharge, 100);
       const avgSpeed = distance / (minutes / 60);
 
       document.getElementById("price").textContent = money(total);
