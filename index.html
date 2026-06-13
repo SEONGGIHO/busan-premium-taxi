@@ -1,10 +1,17 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>부산 모범택시 요금 계산기</title>
+  <title>Busan Premium Taxi Fare Estimator</title>
   <meta name="theme-color" content="#090B10" />
+  <meta name="description" content="Estimate Busan premium and large taxi fares using distance, travel time, and toll fee." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Busan Taxi Fare" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <style>
     :root {
       --bg: #070910;
@@ -313,57 +320,95 @@
       font-size: 11px;
       line-height: 1.55;
     }
+  
+    .install-row {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .installbtn {
+      display: none;
+      border: 1px solid rgba(245, 199, 107, 0.48);
+      background: rgba(245, 199, 107, 0.10);
+      color: var(--gold2);
+      border-radius: 999px;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .installbtn.show {
+      display: inline-flex;
+    }
+
+    .offline-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.45;
+    }
+
   </style>
 </head>
 <body>
   <main class="wrap">
     <section class="hero">
       <div class="badge">🚕 Busan Premium Taxi</div>
-      <h1>부산 모범택시<br/>요금 계산기</h1>
-      <p class="sub">지도에서 확인한 거리와 소요시간, 통행료만 넣으면 모범·대형택시 기준 예상요금을 계산합니다.</p>
+      <h1>Busan Premium Taxi<br/>Fare Estimator</h1>
+      <p class="sub">Enter the distance, travel time, and any tolls from your map app to estimate a Busan premium/large taxi fare.</p>
     </section>
 
     <section class="card">
       <div class="inner">
         <div class="meter-top">
           <div class="meter-title">PREMIUM FARE CHECK</div>
-          <div class="tariff">기본 3km 7,500원<br/>140m당 200원</div>
+          <div class="tariff">Base 3 km ₩7,500<br/>₩200 per 140 m</div>
         </div>
 
         <div class="grid">
           <div>
-            <label for="distance">거리</label>
+            <label for="distance">Distance</label>
             <div class="field">
-              <input id="distance" inputmode="decimal" placeholder="예: 12.4" autocomplete="off" />
+              <input id="distance" inputmode="decimal" placeholder="e.g. 12.4" autocomplete="off" />
               <div class="unit">km</div>
             </div>
           </div>
 
           <div class="row2">
             <div>
-              <label for="minutes">소요시간</label>
+              <label for="minutes">Travel Time</label>
               <div class="field">
-                <input id="minutes" inputmode="decimal" placeholder="예: 32" autocomplete="off" />
-                <div class="unit">분</div>
+                <input id="minutes" inputmode="decimal" placeholder="e.g. 32" autocomplete="off" />
+                <div class="unit">min</div>
               </div>
             </div>
 
             <div>
-              <label for="toll">통행료</label>
+              <label for="toll">Toll Fee</label>
               <div class="field">
                 <input id="toll" inputmode="numeric" placeholder="0" autocomplete="off" />
-                <div class="unit">원</div>
+                <div class="unit">KRW</div>
               </div>
             </div>
           </div>
         </div>
 
-        <button class="btn" onclick="calculateFare()">예상요금 계산하기</button>
+        <button class="btn" onclick="calculateFare()">Estimate Fare</button>
+        <div class="install-row">
+          <button id="installBtn" class="installbtn">Install App</button>
+        </div>
+        <div class="offline-note">Install it on your phone or PC and use it like a regular app. It also works offline after the first visit.</div>
         <div id="error" class="error"></div>
 
         <div id="result" class="result">
-          <div class="result-label">예상요금</div>
-          <div id="price" class="price">0원</div>
+          <div class="result-label">Estimated Fare</div>
+          <div id="price" class="price">₩0</div>
           <div id="resultHint" class="hint"></div>
         </div>
       </div>
@@ -371,14 +416,14 @@
 
     <section class="history">
       <div class="history-head">
-        <h2>최근 계산 기록</h2>
-        <button class="smallbtn" onclick="clearHistory()">기록 삭제</button>
+        <h2>Recent Estimates</h2>
+        <button class="smallbtn" onclick="clearHistory()">Clear</button>
       </div>
       <div id="historyList" class="list"></div>
     </section>
 
     <p class="footer">
-      부산 모범·대형택시 요금표 기준의 간이 계산기입니다. 실제 택시미터 요금과 차이가 있을 수 있습니다.
+      This is a simple estimator based on Busan premium/large taxi rates. Actual meter fares may vary.
     </p>
   </main>
 
@@ -394,7 +439,7 @@
     }
 
     function money(n) {
-      return Math.round(n).toLocaleString("ko-KR") + "원";
+      return "₩" + Math.round(n).toLocaleString("en-US");
     }
 
     function roundUpToUnit(value, unit) {
@@ -414,8 +459,9 @@
     }
 
     function calculateTimeAdjustment(distanceKm, minutes) {
-      // 간이 보정: 평균속도 15km/h 이하일 때, 기준시간보다 초과한 만큼만 시간요금을 반영.
-      // 모범·대형 기준: 저속 시간요금 33초당 200원.
+      // Simple time adjustment: when average speed is 15 km/h or slower,
+      // add a low-speed time charge for the time exceeding the 15 km/h baseline.
+      // Busan premium/large taxi rate: ₩200 per 33 seconds.
       if (distanceKm <= 0 || minutes <= 0) return 0;
       const hours = minutes / 60;
       const avgSpeed = distanceKm / hours;
@@ -437,15 +483,15 @@
       error.classList.remove("show");
 
       if (!Number.isFinite(distance) || distance <= 0) {
-        showError("거리를 km 단위로 입력해주세요. 예: 12.4");
+        showError("Please enter the distance in kilometers. Example: 12.4");
         return;
       }
       if (!Number.isFinite(minutes) || minutes <= 0) {
-        showError("소요시간을 분 단위로 입력해주세요. 예: 32");
+        showError("Please enter the travel time in minutes. Example: 32");
         return;
       }
       if (!Number.isFinite(toll) || toll < 0) {
-        showError("통행료는 0원 이상으로 입력해주세요. 없으면 0으로 두면 됩니다.");
+        showError("Please enter a toll fee of 0 KRW or more. If there is no toll, leave it as 0.");
         return;
       }
 
@@ -456,12 +502,43 @@
 
       document.getElementById("price").textContent = money(total);
       document.getElementById("resultHint").textContent =
-        `${distance.toFixed(1)}km · ${minutes.toFixed(0)}분 · 평균 ${avgSpeed.toFixed(1)}km/h` +
-        (toll > 0 ? ` · 통행료 ${money(toll)} 포함` : "");
+        `${distance.toFixed(1)} km · ${minutes.toFixed(0)} min · Avg ${avgSpeed.toFixed(1)} km/h` +
+        (toll > 0 ? ` · Toll ${money(toll)} included` : "");
 
       result.classList.add("show");
       saveHistory({ distance, minutes, toll, total, avgSpeed, createdAt: new Date().toISOString() });
-      renderHistory();
+  
+    let deferredInstallPrompt = null;
+    const installBtn = document.getElementById("installBtn");
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      if (installBtn) installBtn.classList.add("show");
+    });
+
+    if (installBtn) {
+      installBtn.addEventListener("click", async () => {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        installBtn.classList.remove("show");
+      });
+    }
+
+    window.addEventListener("appinstalled", () => {
+      deferredInstallPrompt = null;
+      if (installBtn) installBtn.classList.remove("show");
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+      });
+    }
+
+    renderHistory();
     }
 
     function showError(message) {
@@ -487,24 +564,55 @@
 
     function clearHistory() {
       localStorage.removeItem(STORAGE_KEY);
-      renderHistory();
+  
+    let deferredInstallPrompt = null;
+    const installBtn = document.getElementById("installBtn");
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      if (installBtn) installBtn.classList.add("show");
+    });
+
+    if (installBtn) {
+      installBtn.addEventListener("click", async () => {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        installBtn.classList.remove("show");
+      });
+    }
+
+    window.addEventListener("appinstalled", () => {
+      deferredInstallPrompt = null;
+      if (installBtn) installBtn.classList.remove("show");
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+      });
+    }
+
+    renderHistory();
     }
 
     function renderHistory() {
       const list = document.getElementById("historyList");
       const history = getHistory();
       if (history.length === 0) {
-        list.innerHTML = `<div class="empty">아직 계산 기록이 없습니다.</div>`;
+        list.innerHTML = `<div class="empty">No estimates yet.</div>`;
         return;
       }
       list.innerHTML = history.map(item => {
         const d = new Date(item.createdAt);
-        const time = Number.isNaN(d.getTime()) ? "" : d.toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
-        const tollText = item.toll > 0 ? ` · 통행료 ${money(item.toll)}` : "";
+        const time = Number.isNaN(d.getTime()) ? "" : d.toLocaleString("en-US", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+        const tollText = item.toll > 0 ? ` · Toll ${money(item.toll)}` : "";
         return `
           <div class="item">
             <div class="item-main">
-              <div class="item-title">${item.distance.toFixed(1)}km · ${Math.round(item.minutes)}분</div>
+              <div class="item-title">${item.distance.toFixed(1)} km · ${Math.round(item.minutes)} min</div>
               <div class="item-sub">${time}${tollText}</div>
             </div>
             <div class="item-price">${money(item.total)}</div>
@@ -516,6 +624,37 @@
     document.addEventListener("keydown", (e) => {
       if (e.key === "Enter") calculateFare();
     });
+
+
+    let deferredInstallPrompt = null;
+    const installBtn = document.getElementById("installBtn");
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      if (installBtn) installBtn.classList.add("show");
+    });
+
+    if (installBtn) {
+      installBtn.addEventListener("click", async () => {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        installBtn.classList.remove("show");
+      });
+    }
+
+    window.addEventListener("appinstalled", () => {
+      deferredInstallPrompt = null;
+      if (installBtn) installBtn.classList.remove("show");
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+      });
+    }
 
     renderHistory();
   </script>
